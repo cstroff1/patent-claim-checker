@@ -165,7 +165,40 @@ textarea{font-family:var(--mono);font-size:12.5px;line-height:1.75;min-height:30
 .aside{padding:12px 16px;font-size:12.5px;color:var(--ink-2)}
 .aside .chips{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
 .aside code{font-family:var(--mono);font-size:11.5px;background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-radius:3px}
-.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;align-items:center}
+.actions .spacer{flex:1}
+.cmp .ctx{display:block;font-family:var(--sans);font-size:11.5px;font-weight:400;color:var(--ink-2);margin-top:3px;white-space:normal;line-height:1.45}
+.cmp .ctx mark{background:none;color:var(--bad);font-weight:600}
+.cmp.flagged td{white-space:normal;vertical-align:top}
+
+/* Source documents */
+.sources{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.src{display:flex;flex-direction:column;transition:border-color .12s,box-shadow .12s}
+.src.drag{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+.src-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.src-head p{margin:2px 0 0;font-size:11.5px;color:var(--ink-3)}
+.src-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.src textarea{min-height:220px;font-family:var(--sans);font-size:12.5px;line-height:1.6}
+.file-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 10px}
+.file-row b{font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-row .btn-text{margin-left:auto}
+.file-err{font-size:12px;color:var(--bad)}
+.det{border-top:1px solid var(--line);padding:12px 16px 14px;background:var(--bg);border-radius:0 0 6px 6px;display:flex;flex-direction:column;gap:8px}
+.det-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.det-head h3{font-size:12px;font-weight:600;margin:0}
+.det-head span{font-size:11.5px;color:var(--ink-3)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;min-height:24px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:11.5px;background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:2px 3px 2px 7px;max-width:100%}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.added{border-color:var(--accent);color:var(--accent-ink)}
+.chip button{border:0;background:none;padding:0 3px;color:var(--ink-3);font-size:13px;line-height:1}
+.chip button:hover{color:var(--bad)}
+.det-empty{font-size:12px;color:var(--ink-3)}
+.add-row{display:flex;gap:6px}
+.add-row input{height:28px;font-size:12px;max-width:none}
+.add-row .btn{height:28px;font-size:12px}
+.form-top{padding:16px 20px}
+@media (max-width:760px){.sources{grid-template-columns:1fr}}
 
 /* Library */
 .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -229,11 +262,44 @@ tr.detail > td{padding:0;background:var(--bg);white-space:normal}
 (function(){
 const KEY = 'pccc.reviews.v2';
 const DISCLAIMER = 'This tool works with compound names you provide directly — no connection to real patent filings or proprietary data.';
+const LIB = {
+  pdf:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  pdfWorker:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+  mammoth:'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js'
+};
+
+/* ---------- Sample documents (fictional) ---------- */
+const SEED_BRIEF = `INVENTION DISCLOSURE (fictional sample)
+Project DX-2031: Heterocyclic Kinase Inhibitors
+
+Summary of results
+The team prepared a series of pyrazolopyrimidine inhibitors. Compound-A114, Compound-A115 and Compound-A118 inhibited the target kinase below 50 nM. Compound-B22 showed the best oral exposure in rat. Compound-B23, the N-ethyl analogue of Compound-B22, kept its potency and improved solubility threefold.
+
+Compound-C07 and Compound-C09 were prepared as prodrug forms. Compound-D301 is the crystalline salt selected for scale-up.`;
+const SEED_CLAIMS = `CLAIMS
+1. A compound selected from the group consisting of Compound-A114, Compound-A115, Compound-A118, Compound-B22, Compound-C07 and Compound-C09, or a pharmaceutically acceptable salt thereof.
+2. The compound of claim 1, wherein the salt is Compound-D301.
+3. A pharmaceutical composition comprising the compound of claim 1 and a pharmaceutically acceptable carrier.`;
+const SAMPLE = {
+  name:'DX-2044 — Chelating Agents',
+  brief:`INVENTION DISCLOSURE (fictional sample)
+Project DX-2044: Chelating Agents for Industrial Water Treatment
+
+Summary
+The research team synthesized six candidate chelators. Compound-A114 and Compound-A120 showed the strongest calcium binding at pH 7.4. Compound-B22 and Compound-B27 stayed stable above 90 °C.
+
+Compound-M5 served as the reference agent. Compound-M6, a fluorinated analogue of Compound-M5, gave a 40% improvement in scale inhibition and is the lead candidate for the next round of testing.`,
+  claims:`CLAIMS
+1. A water-treatment composition comprising a chelating agent selected from the group consisting of Compound-A114, Compound-A120, Compound-B22 and Compound-B27.
+2. The composition of claim 1, further comprising Compound M5.
+3. The composition of claim 1, wherein the chelating agent is present at 0.5 to 5 wt%.`
+};
 
 const SEED = [
   { id:'seed-1', name:'DX-2031 — Heterocyclic Kinase Inhibitors', demo:true,
     disclosed:['Compound-A114','Compound-A115','Compound-A118','Compound-B22','Compound-B23','Compound-C07','Compound-C09','Compound-D301'],
     claimed:['Compound-A114','Compound-A115','Compound-A118','Compound-B22','Compound-C07','Compound-C09','Compound-D301'],
+    briefText:SEED_BRIEF, claimsText:SEED_CLAIMS, briefFile:'DX-2031_disclosure.pdf', claimsFile:'DX-2031_claims_draft3.docx',
     ts: Date.parse('2026-09-18T14:12:00') },
   { id:'seed-2', name:'DX-1987 — Polymer Coating Additives', demo:true,
     disclosed:['Compound-P11','Compound-P12','Compound-P14','Compound-Q3','Compound-Q5','Compound-R88'],
@@ -245,29 +311,97 @@ const SEED = [
     ts: Date.parse('2026-08-29T16:25:00') }
 ];
 
-const norm = s => s.trim().replace(/\s+/g,' ').toLowerCase();
-function parseList(text){
-  const seen = new Set(), out = [];
-  text.split(/\r?\n/).forEach(l => { const t = l.trim().replace(/\s+/g,' '); if(!t) return; const k = t.toLowerCase(); if(seen.has(k)) return; seen.add(k); out.push(t); });
-  return out;
+/* ---------- Matching ---------- */
+const DASH = '\\-\u2010-\u2015\u2212';
+// Comparison key: case, spaces and hyphens are ignored, so "Compound M5" = "compound-m5".
+const key = s => s.toLowerCase().replace(new RegExp('[\\s_'+DASH+']+','g'),'');
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function nameRegex(n){
+  const parts = n.trim().split(new RegExp('[\\s'+DASH+']+')).filter(Boolean).map(escRe);
+  return new RegExp('(?<![A-Za-z0-9])'+parts.join('[\\s'+DASH+']*')+'(?![A-Za-z0-9])','i');
+}
+const foundIn = (name, text) => !!text && nameRegex(name).test(text);
+function uniq(arr){ const seen = new Set(); return arr.filter(x => { const k = key(x); if(!k || seen.has(k)) return false; seen.add(k); return true; }); }
+const clean = s => s.replace(/\s+/g,' ').trim();
+
+const PATTERNS = [
+  /\b(?:compound|cpd\.?)[\s\-\u2010-\u2015]*(?:no\.?\s*)?[A-Za-z]{0,4}[\-\u2010-\u2015]?\d{1,5}[A-Za-z]?\b/gi,  // Compound-A114, Compound 12
+  /\b[A-Z]{2,6}[\-\u2010-\u2015]\d{2,7}[A-Z]?\b/g,                                                              // development codes, e.g. ABT-199
+  /\b\d{2,7}-\d{2}-\d\b/g                                                                                       // CAS numbers
+];
+const CHEM_END = /(?:ine|ide|ol|one|ate|ane|ene|yne|ile|ium|azole|amine)$/i;
+
+// Returns compound names found in free text, in order of first appearance.
+// A short one-per-line list is taken line by line instead.
+function extract(text, excludeId){
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if(!lines.length) return [];
+  const short = l => l.split(/\s+/).length <= 5 && l.length <= 80 && !/[.;:]$/.test(l);
+  const listy = lines.length >= 2 ? lines.filter(short).length / lines.length >= 0.8 : lines[0].split(/\s+/).length <= 3;
+  if(listy) return uniq(lines.map(l => clean(l.replace(/^(?:[•*\-\u2013]\s+|\d{1,3}[.)]\s+)/,''))));
+
+  const hits = [];
+  PATTERNS.forEach(re => { re.lastIndex = 0; let m; while((m = re.exec(text))) hits.push({ s:m.index, e:m.index+m[0].length, v:clean(m[0]) }); });
+  // Systematic names: hyphenated tokens with a chemical ending and a locant, bracket or "yl".
+  const tokRe = /\S+/g; let t;
+  while((t = tokRe.exec(text))){
+    let v = t[0].replace(/[.,;:]+$/,'');
+    while(v.endsWith(')') && (v.match(/\(/g)||[]).length < (v.match(/\)/g)||[]).length) v = v.slice(0,-1);
+    if(v.length >= 10 && v.includes('-') && CHEM_END.test(v) && /\d|\(|\[|yl/.test(v)) hits.push({ s:t.index, e:t.index+v.length, v });
+  }
+  hits.sort((a,b) => a.s - b.s || (b.e-b.s) - (a.e-a.s));
+  const out = []; let end = -1;
+  hits.forEach(h => { if(h.s >= end){ out.push(h.v); end = h.e; } });
+  const ex = excludeId ? key(excludeId) : null;
+  return uniq(out.filter(v => key(v) !== ex));
+}
+
+function applyOv(list, ov){
+  const rm = new Set((ov.removed||[]).map(key));
+  return uniq(list.filter(x => !rm.has(key(x))).concat(ov.added||[]));
+}
+const patentId = name => { const m = name.match(/^(.*?)\s+[—–-]\s+/); return m ? m[1].trim() : ''; };
+function disclosedOf(d){ return applyOv(extract(d.brief.text, patentId(d.name)), d.brief); }
+function claimedOf(d, disclosed){
+  const base = extract(d.claims.text, patentId(d.name)).concat(disclosed.filter(x => foundIn(x, d.claims.text)));
+  return applyOv(base, d.claims);
 }
 function compare(disclosed, claimed){
-  const c = new Set(claimed.map(norm)), d = new Set(disclosed.map(norm));
-  const matched = disclosed.filter(x => c.has(norm(x)));
-  const missing = disclosed.filter(x => !c.has(norm(x)));
-  const claimOnly = claimed.filter(x => !d.has(norm(x)));
+  const c = new Set(claimed.map(key)), dk = new Set(disclosed.map(key));
+  const matched = disclosed.filter(x => c.has(key(x)));
+  const missing = disclosed.filter(x => !c.has(key(x)));
+  const claimOnly = claimed.filter(x => !dk.has(key(x)));
   const pct = disclosed.length ? Math.round(matched.length / disclosed.length * 1000)/10 : 0;
   return { matched, missing, claimOnly, pct };
 }
+function context(name, text){
+  if(!text) return null;
+  const m = nameRegex(name).exec(text); if(!m) return null;
+  const a = Math.max(0, m.index-80), b = Math.min(text.length, m.index+m[0].length+80);
+  let pre = text.slice(a, m.index), post = text.slice(m.index+m[0].length, b);
+  if(a > 0) pre = pre.replace(/^\S*\s/, '');
+  if(b < text.length) post = post.replace(/\s\S*$/, '');
+  return { pre:(a>0?'…':'')+clean(pre), hit:m[0], post:clean(post)+(b<text.length?'…':'') };
+}
 
+/* ---------- Storage ---------- */
 function load(){
   try { const raw = localStorage.getItem(KEY); if(raw){ const v = JSON.parse(raw); if(Array.isArray(v)) return v; } } catch(e){}
   return SEED.slice();
 }
-function persist(){ try { localStorage.setItem(KEY, JSON.stringify(reviews)); } catch(e){} }
+function persist(){
+  try { localStorage.setItem(KEY, JSON.stringify(reviews)); return true; }
+  catch(e){
+    // Storage full: keep the compound lists, drop the stored document text.
+    try { localStorage.setItem(KEY, JSON.stringify(reviews.map(r => ({...r, briefText:undefined, claimsText:undefined})))); } catch(e2){}
+    return false;
+  }
+}
 
 let reviews = load();
-let draft = { name:'', disclosed:'', claimed:'' };
+const blankSide = () => ({ text:'', file:null, added:[], removed:[] });
+const blankDraft = () => ({ editingId:null, name:'', brief:blankSide(), claims:blankSide() });
+let draft = blankDraft();
 let current = null;
 let libQuery = '';
 let openIds = new Set();
@@ -281,33 +415,35 @@ const fmtTime = ts => new Date(ts).toLocaleTimeString(undefined,{hour:'numeric',
 const splitName = n => { const m = n.match(/^(.*?)\s+[—–-]\s+(.*)$/); return m ? {id:m[1], title:m[2]} : {id:'—', title:n}; };
 const sorted = () => reviews.slice().sort((a,b)=>b.ts-a.ts);
 
-function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), 2200); }
+function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), 2400); }
 
 const ICON = {
   warn:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
   ok:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>',
   plus:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   chev:'<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
-  search:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
+  search:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  upload:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>',
+  file:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>'
 };
 const disclaimer = () => `<p class="disclaimer">${esc(DISCLAIMER)}</p>`;
 const status = n => n ? `<span class="status bad">${n} missing</span>` : `<span class="status ok">Complete</span>`;
 const pctCell = c => `<span class="pct">${c.pct.toFixed(1)}%<span class="bar ${c.missing.length?'gap':''}"><i style="width:${c.pct}%"></i></span></span>`;
 const demoTag = r => r.demo ? '<span class="tag">Sample</span>' : '';
 
-const CRUMBS = {
-  dashboard:['Dashboard'],
-  new:['Reviews','New Review'],
-  result:['Reviews','New Review','Result'],
-  library:['Reviews','Review Library']
-};
+function crumbsFor(v){
+  if(v==='dashboard') return ['Dashboard'];
+  if(v==='library') return ['Reviews','Review Library'];
+  const base = draft.editingId ? ['Reviews','Review Library','Edit Review'] : ['Reviews','New Review'];
+  return v==='result' ? base.concat('Result') : base;
+}
 
 function go(v){
   view = v;
   if(view==='result' && !current) view = 'new';
-  const navKey = view==='result' ? 'new' : view;
+  const navKey = view==='result' || view==='new' ? (draft.editingId ? 'library' : 'new') : view;
   document.querySelectorAll('[data-nav]').forEach(b => { if(b.dataset.nav===navKey) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
-  const cr = CRUMBS[view];
+  const cr = crumbsFor(view);
   $crumbs.innerHTML = cr.map((c,i)=> i===cr.length-1 ? `<b>${c}</b>` : `<span>${c}</span><span aria-hidden="true">/</span>`).join('');
   render();
   window.scrollTo(0,0);
@@ -316,6 +452,35 @@ function go(v){
 function render(){
   $main.innerHTML = ({dashboard:Dashboard, new:NewReview, result:Result, library:Library})[view]();
   bind();
+}
+
+/* ---------- File reading ---------- */
+const scripts = {};
+function loadScript(src){
+  return scripts[src] ||= new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load the document reader. Check your connection, or paste the text instead.')); document.head.appendChild(s); });
+}
+async function readFile(file){
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if(['txt','md','text','csv'].includes(ext)) return { text: await file.text() };
+  if(ext === 'docx'){
+    await loadScript(LIB.mammoth);
+    const r = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return { text: r.value };
+  }
+  if(ext === 'pdf'){
+    await loadScript(LIB.pdf);
+    const pdfjs = window.pdfjsLib; pdfjs.GlobalWorkerOptions.workerSrc = LIB.pdfWorker;
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    let out = '';
+    for(let i = 1; i <= doc.numPages; i++){
+      const tc = await (await doc.getPage(i)).getTextContent();
+      out += tc.items.map(it => it.str + (it.hasEOL ? '\n' : ' ')).join('') + '\n\n';
+    }
+    if(!out.trim()) throw new Error('This PDF has no selectable text. It may be a scanned image. Paste the text instead.');
+    return { text: out, pages: doc.numPages };
+  }
+  if(ext === 'doc') throw new Error('Older .doc files are not supported. Save the file as .docx or PDF and upload it again.');
+  throw new Error('Upload a PDF, Word (.docx) or plain-text file.');
 }
 
 /* ---------- Dashboard ---------- */
@@ -342,7 +507,7 @@ function Dashboard(){
     </div>
     <section class="panel kpis" aria-label="Summary">
       <div class="kpi"><span class="kpi-label">Patents Reviewed</span><span class="kpi-val">${reviews.length}</span><span class="kpi-foot">${withGaps} with open gaps</span></div>
-      <div class="kpi"><span class="kpi-label">Total Compounds Checked</span><span class="kpi-val">${total}</span><span class="kpi-foot">Disclosed entries compared</span></div>
+      <div class="kpi"><span class="kpi-label">Total Compounds Checked</span><span class="kpi-val">${total}</span><span class="kpi-foot">Disclosed compounds compared</span></div>
       <div class="kpi"><span class="kpi-label">Compounds Flagged Missing</span><span class="kpi-val ${flagged?'bad':''}">${flagged}</span><span class="kpi-foot">Disclosed, not in claims</span></div>
       <div class="kpi"><span class="kpi-label">Completeness Rate</span><span class="kpi-val">${rate===null?'—':rate}<small>${rate===null?'':'%'}</small></span><span class="kpi-foot">Claimed ÷ disclosed</span></div>
     </section>
@@ -351,32 +516,65 @@ function Dashboard(){
       ${reviews.length ? `<div class="table-wrap"><table>
         <thead><tr><th>Patent ID</th><th>Title</th><th class="num">Compounds</th><th class="num">Flagged</th><th class="num">Completeness</th><th>Status</th><th class="hide-sm">Reviewed</th></tr></thead>
         <tbody>${rows}</tbody></table></div>`
-      : `<div class="empty"><h2>No reviews yet</h2><p>Compare a disclosure list against a claims section to start building review history.</p><button class="btn btn-primary" data-go="new" style="margin-top:8px">${ICON.plus}New Review</button></div>`}
+      : `<div class="empty"><h2>No reviews yet</h2><p>Compare a scientific brief against a claims section to start building review history.</p><button class="btn btn-primary" data-go="new" style="margin-top:8px">${ICON.plus}New Review</button></div>`}
     </section>
   </div>`;
 }
 
-/* ---------- New Review ---------- */
-function NewReview(){
-  const dc = parseList(draft.disclosed).length, cc = parseList(draft.claimed).length;
-  return `<div class="page">
-    <div class="head"><div><h1>New Review</h1><p class="sub">Matching is case-insensitive and ignores leading, trailing and repeated spaces.</p></div>
-      <button class="btn btn-secondary" id="sample">Load sample lists</button>
+/* ---------- New / Edit Review ---------- */
+function sourcePanel(side){
+  const s = draft[side], isBrief = side === 'brief';
+  return `<section class="panel src" data-side="${side}">
+    <div class="src-head">
+      <div><h2>${isBrief ? 'Scientific brief' : 'Patent claims'}</h2><p>${isBrief ? 'Invention disclosure from the research team' : 'Claims section of the draft application'}</p></div>
+      <label class="btn btn-secondary" for="file-${side}">${ICON.upload}Upload</label>
+      <input type="file" id="file-${side}" accept=".pdf,.docx,.txt,.md" hidden>
     </div>
-    <form class="panel" id="form" novalidate>
-      <div class="form">
-        <div class="field"><label for="pname">Patent name or ID</label>
-          <input type="text" id="pname" placeholder="DX-2044 — Chelating Agents" value="${esc(draft.name)}" autocomplete="off"></div>
-        <div class="two">
-          <div class="field"><label for="disc">Disclosed compounds <span>One per line</span></label>
-            <textarea id="disc" spellcheck="false" placeholder="Compound-A114&#10;Compound-A115&#10;Compound-B22">${esc(draft.disclosed)}</textarea>
-            <div class="ta-meta"><span>Source: invention disclosure</span><span id="dc">${dc} unique</span></div></div>
-          <div class="field"><label for="claim">Claimed compounds <span>One per line</span></label>
-            <textarea id="claim" spellcheck="false" placeholder="Compound-A114&#10;Compound-B22">${esc(draft.claimed)}</textarea>
-            <div class="ta-meta"><span>Source: claims section</span><span id="cc">${cc} unique</span></div></div>
-        </div>
-      </div>
-      <div class="form-foot"><span class="err" id="err" role="alert"></span><button type="submit" class="btn btn-primary">Compare</button></div>
+    <div class="src-body">
+      <div id="file-${side}-row">${fileRow(side)}</div>
+      <textarea id="text-${side}" spellcheck="false" aria-label="${isBrief ? 'Scientific brief text' : 'Patent claims text'}" placeholder="${isBrief
+        ? 'Upload a PDF, Word or text file, drop one here, or paste the brief. A plain list of compounds, one per line, also works.'
+        : 'Upload or paste the claims section. Every compound mentioned in the claims is found automatically.'}">${esc(s.text)}</textarea>
+    </div>
+    <div class="det" id="det-${side}"></div>
+  </section>`;
+}
+function fileRow(side){
+  const s = draft[side];
+  if(s.error) return `<div class="file-err" role="alert">${esc(s.error)}</div>`;
+  if(s.loading) return `<div class="file-row">${ICON.file}<b>${esc(s.loading)}</b><span class="muted">Reading…</span></div>`;
+  if(!s.file) return '';
+  return `<div class="file-row">${ICON.file}<b>${esc(s.file)}</b>${s.pages?`<span class="muted">${s.pages} page${s.pages>1?'s':''}</span>`:''}<button type="button" class="btn-text" data-clear="${side}">Remove</button></div>`;
+}
+function detPanel(side, list){
+  const s = draft[side], added = new Set((s.added||[]).map(key));
+  const isBrief = side === 'brief';
+  const chips = list.map(x => `<span class="chip ${added.has(key(x))?'added':''}" title="${esc(x)}"><span>${esc(x)}</span><button type="button" data-rm="${side}" data-v="${esc(x)}" aria-label="Remove ${esc(x)}">×</button></span>`).join('');
+  return `<div class="det-head"><h3>${isBrief ? 'Disclosed compounds' : 'Compounds found in claims'} (${list.length})</h3><span>${s.removed.length ? `${s.removed.length} removed · <button type="button" class="btn-text" data-restore="${side}">Restore</button>` : 'Remove any that are wrong'}</span></div>
+    <div class="chips">${chips || `<span class="det-empty">${s.text.trim() ? 'No compounds detected. Add them below.' : 'Nothing yet.'}</span>`}</div>
+    <div class="add-row"><input type="text" id="add-${side}" placeholder="Add a compound the scan missed" autocomplete="off"><button type="button" class="btn btn-secondary" data-add="${side}">Add</button></div>`;
+}
+function refreshDetected(){
+  const disclosed = disclosedOf(draft), claimed = claimedOf(draft, disclosed);
+  const b = document.getElementById('det-brief'), c = document.getElementById('det-claims');
+  if(b) b.innerHTML = detPanel('brief', disclosed);
+  if(c) c.innerHTML = detPanel('claims', claimed);
+  return { disclosed, claimed };
+}
+
+function NewReview(){
+  const editing = draft.editingId;
+  return `<div class="page">
+    <div class="head"><div><h1>${editing ? 'Edit Review' : 'New Review'}</h1><p class="sub">Add the scientific brief and the claims. Compounds are detected from each document, then every disclosed compound is checked against the claims.</p></div>
+      ${editing ? '' : '<button class="btn btn-secondary" id="sample">Load sample documents</button>'}
+    </div>
+    <form id="form" novalidate style="display:flex;flex-direction:column;gap:16px">
+      <section class="panel form-top"><div class="field"><label for="pname">Patent name or ID</label>
+        <input type="text" id="pname" placeholder="DX-2044 — Chelating Agents" value="${esc(draft.name)}" autocomplete="off"></div></section>
+      <div class="sources">${sourcePanel('brief')}${sourcePanel('claims')}</div>
+      <div class="actions"><span class="err" id="err" role="alert"></span><span class="spacer"></span>
+        ${editing ? '<button type="button" class="btn btn-secondary" id="cancel-edit">Cancel</button>' : ''}
+        <button type="submit" class="btn btn-primary">Compare</button></div>
     </form>
     ${disclaimer()}
   </div>`;
@@ -387,8 +585,13 @@ function Result(){
   const r = current, c = compare(r.disclosed, r.claimed), n = splitName(r.name);
   const tone = c.missing.length ? 'bad' : 'ok';
   const rows = arr => `<table><tbody>${arr.map((x,i)=>`<tr><td class="ix">${i+1}</td><td>${esc(x)}</td></tr>`).join('')}</tbody></table>`;
+  const flaggedRows = `<table><tbody>${c.missing.map((x,i)=>{
+    const ctx = context(x, r.briefText);
+    return `<tr><td class="ix">${i+1}</td><td>${esc(x)}${ctx?`<span class="ctx">Brief: ${esc(ctx.pre)} <mark>${esc(ctx.hit)}</mark> ${esc(ctx.post)}</span>`:''}</td></tr>`;
+  }).join('')}</tbody></table>`;
+  const src = [r.briefFile && `Brief: ${r.briefFile}`, r.claimsFile && `Claims: ${r.claimsFile}`].filter(Boolean).map(esc).join(' · ');
   return `<div class="page">
-    <div class="head"><div><h1>${esc(n.title)}</h1><p class="sub"><span class="mono">${esc(n.id)}</span> · Compared ${esc(fmtDate(Date.now()))}</p></div></div>
+    <div class="head"><div><h1>${esc(n.title)}</h1><p class="sub"><span class="mono">${esc(n.id)}</span> · Compared ${esc(fmtDate(Date.now()))}${src?' · '+src:''}</p></div></div>
     ${c.missing.length
       ? `<div class="alert" role="alert">${ICON.warn}<span>${c.missing.length} compound${c.missing.length>1?'s':''} disclosed but not found in claims — review before submission</span></div>`
       : `<div class="alert ok">${ICON.ok}<span>All disclosed compounds appear in the claims section.</span></div>`}
@@ -404,12 +607,14 @@ function Result(){
       <section class="panel"><div class="list-head"><span class="dot" style="background:var(--ok)"></span><h2>Properly Claimed</h2><span class="n">${c.matched.length}</span></div>
         ${c.matched.length?`<div class="cmp">${rows(c.matched)}</div>`:'<div class="none">No disclosed compounds were found in the claims.</div>'}</section>
       <section class="panel"><div class="list-head"><span class="dot" style="background:var(--bad)"></span><h2>Flagged — Missing from Claims</h2><span class="n">${c.missing.length}</span></div>
-        ${c.missing.length?`<div class="cmp flagged">${rows(c.missing)}</div>`:'<div class="none">None.</div>'}</section>
+        ${c.missing.length?`<div class="cmp flagged">${flaggedRows}</div>`:'<div class="none">None.</div>'}</section>
     </div>
-    ${c.claimOnly.length?`<div class="panel aside">${c.claimOnly.length} claimed compound${c.claimOnly.length>1?'s do':' does'} not appear in the disclosure list. Not counted in the score.<div class="chips">${c.claimOnly.map(x=>`<code>${esc(x)}</code>`).join('')}</div></div>`:''}
+    ${c.claimOnly.length?`<div class="panel aside">${c.claimOnly.length} compound${c.claimOnly.length>1?'s':''} in the claims ${c.claimOnly.length>1?'do':'does'} not appear in the brief. Not counted in the score.<div class="chips">${c.claimOnly.map(x=>`<code>${esc(x)}</code>`).join('')}</div></div>`:''}
     <div class="actions">
-      <button class="btn btn-secondary" id="another">Check Another Patent</button>
-      <button class="btn btn-primary" id="save">Save to Dashboard</button>
+      <button class="btn-text" id="back-edit">Edit inputs</button><span class="spacer"></span>
+      ${draft.editingId
+        ? `<button class="btn btn-secondary" id="cancel-edit">Discard changes</button><button class="btn btn-primary" id="save">Save Changes</button>`
+        : `<button class="btn btn-secondary" id="another">Check Another Patent</button><button class="btn btn-primary" id="save">Save to Dashboard</button>`}
     </div>
     ${disclaimer()}
   </div>`;
@@ -421,7 +626,8 @@ function Library(){
   const list = sorted().filter(r => !q || r.name.toLowerCase().includes(q));
   const body = list.map(r=>{
     const c = compare(r.disclosed,r.claimed), n = splitName(r.name), open = openIds.has(r.id);
-    const miss = new Set(c.missing.map(norm));
+    const miss = new Set(c.missing.map(key));
+    const files = [r.briefFile, r.claimsFile].filter(Boolean).map(esc).join(', ');
     return `<tr class="row ${open?'open':''}" data-toggle="${esc(r.id)}" tabindex="0" aria-expanded="${open}">
         <td style="width:30px;padding-right:0">${ICON.chev}</td>
         <td class="id">${esc(n.id)}</td>
@@ -433,15 +639,16 @@ function Library(){
       </tr>
       ${open?`<tr class="detail"><td colspan="7">
         <div class="detail-grid">
-          <div class="detail-col"><h3>Disclosed (${r.disclosed.length})</h3><ol>${r.disclosed.map(x=>`<li class="${miss.has(norm(x))?'flag':''}">${esc(x)}</li>`).join('')}</ol></div>
+          <div class="detail-col"><h3>Disclosed (${r.disclosed.length})</h3><ol>${r.disclosed.map(x=>`<li class="${miss.has(key(x))?'flag':''}">${esc(x)}</li>`).join('')}</ol></div>
           <div class="detail-col"><h3>Claimed (${r.claimed.length})</h3><ol>${r.claimed.map(x=>`<li>${esc(x)}</li>`).join('') || '<li class="muted">None</li>'}</ol></div>
           <div class="detail-col"><h3>Flagged missing (${c.missing.length})</h3>${c.missing.length?`<ol>${c.missing.map(x=>`<li style="color:var(--bad)">${esc(x)}</li>`).join('')}</ol>`:'<p class="muted" style="margin:0;font-size:12px">None</p>'}</div>
         </div>
-        <div class="detail-foot"><span>Saved ${esc(fmtDate(r.ts))}, ${esc(fmtTime(r.ts))} · ${c.matched.length} of ${r.disclosed.length} claimed</span><span id="del-${esc(r.id)}"><button class="btn-text btn-danger" data-del="${esc(r.id)}">Delete review</button></span></div>
+        <div class="detail-foot"><span>Saved ${esc(fmtDate(r.ts))}, ${esc(fmtTime(r.ts))}${r.edited?` · Edited ${esc(fmtDate(r.edited))}, ${esc(fmtTime(r.edited))}`:''} · ${c.matched.length} of ${r.disclosed.length} claimed${files?' · '+files:''}</span>
+          <span id="del-${esc(r.id)}" style="display:flex;gap:16px"><button class="btn-text" data-edit="${esc(r.id)}">Edit review</button><button class="btn-text btn-danger" data-del="${esc(r.id)}">Delete</button></span></div>
       </td></tr>`:''}`;
   }).join('');
   return `<div class="page">
-    <div class="head"><div><h1>Review Library</h1><p class="sub">All saved reviews. Select a row to see the full compound lists.</p></div>
+    <div class="head"><div><h1>Review Library</h1><p class="sub">All saved reviews. Select a row to see the compound lists or edit the review.</p></div>
       <button class="btn btn-primary" data-go="new">${ICON.plus}New Review</button></div>
     <section class="panel">
       <div class="toolbar">
@@ -458,42 +665,113 @@ function Library(){
   </div>`;
 }
 
+function startEdit(id){
+  const r = reviews.find(x => x.id === id); if(!r) return;
+  const side = (text, list, file, ov) => ({ text: text ?? list.join('\n'), file: file || null, added: ov?.added?.slice() || [], removed: ov?.removed?.slice() || [] });
+  draft = { editingId:id, name:r.name,
+    brief: side(r.briefText, r.disclosed, r.briefFile, r.briefOv),
+    claims: side(r.claimsText, r.claimed, r.claimsFile, r.claimsOv) };
+  // Lists saved without their documents keep any manual changes as the text itself.
+  if(r.briefText == null){ draft.brief.added = []; draft.brief.removed = []; }
+  if(r.claimsText == null){ draft.claims.added = []; draft.claims.removed = []; }
+  current = null; go('new');
+}
+
 /* ---------- Events ---------- */
 function bind(){
-  $main.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+  $main.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { if(b.dataset.go==='new'){ draft = blankDraft(); current = null; } go(b.dataset.go); });
   $main.querySelectorAll('tr[data-open]').forEach(tr => {
     const f = () => { openIds = new Set([tr.dataset.open]); libQuery=''; go('library'); };
     tr.onclick = f; tr.onkeydown = e => { if(e.key==='Enter') f(); };
   });
+  const cancel = document.getElementById('cancel-edit');
+  if(cancel) cancel.onclick = () => { const id = draft.editingId; draft = blankDraft(); current = null; openIds = new Set([id]); go('library'); };
 
   if(view==='new'){
-    const pn = document.getElementById('pname'), d = document.getElementById('disc'), cl = document.getElementById('claim');
-    pn.oninput = () => draft.name = pn.value;
-    d.oninput = () => { draft.disclosed = d.value; document.getElementById('dc').textContent = parseList(d.value).length + ' unique'; };
-    cl.oninput = () => { draft.claimed = cl.value; document.getElementById('cc').textContent = parseList(cl.value).length + ' unique'; };
-    document.getElementById('sample').onclick = () => {
-      draft = { name:'DX-2044 — Chelating Agents',
-        disclosed:['Compound-A114','Compound-A120','Compound-B22','Compound-B27','Compound-M5','Compound-M6'].join('\n'),
-        claimed:['compound-a114','Compound-A120 ','Compound-B22','Compound-B27','Compound-M5'].join('\n') };
+    const pn = document.getElementById('pname');
+    let t;
+    pn.oninput = () => { draft.name = pn.value; clearTimeout(t); t = setTimeout(refreshDetected, 250); };
+    ['brief','claims'].forEach(side => {
+      const ta = document.getElementById('text-'+side), fi = document.getElementById('file-'+side), panel = $main.querySelector(`.src[data-side="${side}"]`);
+      ta.oninput = () => { draft[side].text = ta.value; clearTimeout(t); t = setTimeout(refreshDetected, 250); };
+      const take = async file => {
+        if(!file) return;
+        const s = draft[side]; s.error = null; s.loading = file.name;
+        document.getElementById(`file-${side}-row`).innerHTML = fileRow(side);
+        try {
+          const r = await readFile(file);
+          Object.assign(s, { text: r.text.replace(/\n{3,}/g,'\n\n').trim(), file: file.name, pages: r.pages || null, added: [], removed: [], loading: null });
+          ta.value = s.text;
+        } catch(e){ s.loading = null; s.error = e.message || 'Could not read that file.'; }
+        document.getElementById(`file-${side}-row`).innerHTML = fileRow(side);
+        refreshDetected();
+      };
+      fi.onchange = () => { take(fi.files[0]); fi.value = ''; };
+      panel.ondragover = e => { e.preventDefault(); panel.classList.add('drag'); };
+      panel.ondragleave = e => { if(!panel.contains(e.relatedTarget)) panel.classList.remove('drag'); };
+      panel.ondrop = e => { e.preventDefault(); panel.classList.remove('drag'); take(e.dataTransfer.files[0]); };
+    });
+
+    const form = document.getElementById('form');
+    form.addEventListener('click', e => {
+      const b = e.target.closest('button'); if(!b) return;
+      const side = b.dataset.rm || b.dataset.add || b.dataset.restore || b.dataset.clear; if(!side) return;
+      const s = draft[side];
+      if(b.dataset.rm){
+        const k = key(b.dataset.v);
+        if(s.added.some(x => key(x) === k)) s.added = s.added.filter(x => key(x) !== k); else s.removed.push(b.dataset.v);
+      } else if(b.dataset.add){
+        const inp = document.getElementById('add-'+side), v = clean(inp.value); if(!v) return;
+        s.removed = s.removed.filter(x => key(x) !== key(v));
+        if(!s.added.some(x => key(x) === key(v))) s.added.push(v);
+      } else if(b.dataset.restore){ s.removed = []; }
+      else if(b.dataset.clear){ Object.assign(s, { file:null, pages:null, error:null }); document.getElementById(`file-${side}-row`).innerHTML = ''; }
+      refreshDetected();
+      if(b.dataset.add) document.getElementById('add-'+side).focus();
+    });
+    form.addEventListener('keydown', e => {
+      if(e.key === 'Enter' && e.target.id && e.target.id.startsWith('add-')){ e.preventDefault(); form.querySelector(`[data-add="${e.target.id.slice(4)}"]`).click(); }
+    });
+
+    const sample = document.getElementById('sample');
+    if(sample) sample.onclick = () => {
+      draft = { editingId:null, name:SAMPLE.name,
+        brief:{ ...blankSide(), text:SAMPLE.brief, file:'DX-2044_disclosure.pdf' },
+        claims:{ ...blankSide(), text:SAMPLE.claims, file:'DX-2044_claims.docx' } };
       render();
     };
-    document.getElementById('form').onsubmit = e => {
+    form.onsubmit = e => {
       e.preventDefault();
-      const name = pn.value.trim(), dl = parseList(d.value), clst = parseList(cl.value), err = document.getElementById('err');
+      const name = pn.value.trim(), err = document.getElementById('err');
+      const disclosed = disclosedOf(draft), claimed = claimedOf(draft, disclosed);
       if(!name){ err.textContent = 'Enter a patent name or ID.'; pn.focus(); return; }
-      if(!dl.length){ err.textContent = 'Enter at least one disclosed compound.'; d.focus(); return; }
-      current = { name, disclosed: dl, claimed: clst };
+      if(!draft.brief.text.trim() && !draft.brief.added.length){ err.textContent = 'Add the scientific brief.'; document.getElementById('text-brief').focus(); return; }
+      if(!disclosed.length){ err.textContent = 'No compounds were detected in the brief. Add them under Disclosed compounds.'; document.getElementById('add-brief').focus(); return; }
+      if(!draft.claims.text.trim() && !draft.claims.added.length){ err.textContent = 'Add the patent claims.'; document.getElementById('text-claims').focus(); return; }
+      current = { name, disclosed, claimed, briefText:draft.brief.text, claimsText:draft.claims.text, briefFile:draft.brief.file, claimsFile:draft.claims.file };
       go('result');
     };
+    refreshDetected();
   }
 
   if(view==='result'){
+    document.getElementById('back-edit').onclick = () => { current = null; go('new'); };
     document.getElementById('save').onclick = () => {
-      reviews.push({ id:'r-'+Date.now().toString(36), name:current.name, disclosed:current.disclosed, claimed:current.claimed, ts:Date.now() });
-      persist(); current = null; draft = {name:'',disclosed:'',claimed:''};
-      go('dashboard'); toast('Review saved');
+      const rec = { name:current.name, disclosed:current.disclosed, claimed:current.claimed,
+        briefText:draft.brief.text, claimsText:draft.claims.text, briefFile:draft.brief.file, claimsFile:draft.claims.file,
+        briefOv:{ added:draft.brief.added, removed:draft.brief.removed }, claimsOv:{ added:draft.claims.added, removed:draft.claims.removed } };
+      const editing = draft.editingId;
+      if(editing){
+        const i = reviews.findIndex(r => r.id === editing);
+        if(i >= 0) reviews[i] = { ...reviews[i], ...rec, edited: Date.now() };
+      } else reviews.push({ id:'r-'+Date.now().toString(36), ...rec, ts:Date.now() });
+      const ok = persist();
+      current = null; draft = blankDraft();
+      if(editing){ openIds = new Set([editing]); go('library'); } else go('dashboard');
+      toast(ok ? (editing ? 'Changes saved' : 'Review saved') : 'Saved. The documents were too large to keep, so only the compound lists were stored.');
     };
-    document.getElementById('another').onclick = () => { current = null; draft = {name:'',disclosed:'',claimed:''}; go('new'); };
+    const another = document.getElementById('another');
+    if(another) another.onclick = () => { current = null; draft = blankDraft(); go('new'); };
   }
 
   if(view==='library'){
@@ -503,17 +781,18 @@ function bind(){
       const f = () => { const id = tr.dataset.toggle; openIds.has(id) ? openIds.delete(id) : openIds.add(id); render(); };
       tr.onclick = f; tr.onkeydown = e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); f(); } };
     });
+    $main.querySelectorAll('[data-edit]').forEach(b => b.onclick = e => { e.stopPropagation(); startEdit(b.dataset.edit); });
     $main.querySelectorAll('[data-del]').forEach(b => b.onclick = e => {
       e.stopPropagation();
       const id = b.dataset.del, slot = document.getElementById('del-'+id);
-      slot.innerHTML = `Delete this review? <button class="btn-text btn-danger" data-yes>Delete</button> · <button class="btn-text" data-no>Cancel</button>`;
+      slot.innerHTML = `Delete this review? <button class="btn-text btn-danger" data-yes>Delete</button><button class="btn-text" data-no>Cancel</button>`;
       slot.querySelector('[data-yes]').onclick = () => { reviews = reviews.filter(r=>r.id!==id); persist(); render(); toast('Review deleted'); };
       slot.querySelector('[data-no]').onclick = () => render();
     });
   }
 }
 
-document.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if(b.dataset.nav==='new') current = null; go(b.dataset.nav); });
+document.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if(b.dataset.nav==='new'){ current = null; draft = blankDraft(); } go(b.dataset.nav); });
 go('dashboard');
 })();
 </script>
